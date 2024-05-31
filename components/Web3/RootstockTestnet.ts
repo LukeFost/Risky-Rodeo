@@ -10,7 +10,7 @@ export const rsktestnet = defineChain({
   },
   rpcUrls: {
     default: {
-      http: ["https://public-node.testnet.rsk.co"],
+      http: ["https://rpc.testnet.rootstock.io/DBBBYBfo4MkeTyDhIhddULnJhW0bHT-T"],
     },
   },
   blockExplorers: {

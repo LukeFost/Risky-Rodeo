@@ -1,3 +1,4 @@
+import { rsktestnet } from '@/components/Web3/RootstockTestnet'
 import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
 
 import { cookieStorage, createStorage } from 'wagmi'
@@ -16,7 +17,7 @@ const metadata = {
 }
 
 // Create wagmiConfig
-const chains = [rootstock, rootstockTestnet] as const
+const chains = [rootstock, rsktestnet] as const
 export const config = defaultWagmiConfig({
   chains,
   projectId,
