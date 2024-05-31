@@ -12,10 +12,12 @@ import {
   FormLabel,
   FormMessage,
 } from "../ui/form";
-import { Input } from "../ui/input"; // Correct the import path for Input
+import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Slider } from "../ui/slider";
 import { DoubleSlider } from "../DoubleSlider";
+import { useAtom } from 'jotai';
+import { btcAmountAtom, minMaxBoundsAtom, sbtcBorrowAtom } from '@/app/atom'; // Correct the import path for atoms
 
 const formSchema = z.object({
   btcAmount: z.number().positive(),
@@ -24,13 +26,17 @@ const formSchema = z.object({
 });
 
 export default function AddBTCForm() {
+  const [btcAmount, setBtcAmount] = useAtom(btcAmountAtom);
+  const [minMaxBounds, setMinMaxBounds] = useAtom(minMaxBoundsAtom);
+  const [sbtcBorrow, setSbtcBorrow] = useAtom(sbtcBorrowAtom);
+
   // 1. Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      btcAmount: 0,
-      minMaxBounds: [0, 100],
-      sbtcBorrow: 0,
+      btcAmount,
+      minMaxBounds,
+      sbtcBorrow,
     },
   });
 
@@ -38,9 +44,16 @@ export default function AddBTCForm() {
 
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
+    // Save form values to Jotai state.
+    setBtcAmount(values.btcAmount);
+    setMinMaxBounds(values.minMaxBounds);
+    setSbtcBorrow(values.sbtcBorrow);
+
     // Do something with the form values.
     // ✅ This will be type-safe and validated.
     console.log(values);
+
+    // Connect this to wagmi or other logic here
   }
 
   return (
