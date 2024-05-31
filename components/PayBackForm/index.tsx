@@ -19,16 +19,15 @@ import { sbtcPayBackAtom, tokenApprovalAtom, errorAtom } from '@/app/atom'; // C
 import React, { useState } from "react";
 import BlockchainWatcher from '@/components/BlockchainWatcher'; // Correct the import path for BlockchainWatcher
 import { useWriteContract } from 'wagmi';
-import { getAddress, parseEther } from "viem";
+import { getAddress, parseEther, formatUnits } from "viem";
 import { erc20ABI } from '@/app/abi/erc20Abi'; // Correct the import path for the ABI
-import { BTC, managerAddress, sBTC } from "@/app/abi/addresses";
+import { managerAddress, sBTC } from "@/app/abi/addresses";
 import { managerAbi } from "@/app/abi/managerABI";
 
 const formSchema = z.object({
   sbtcPayBack: z.number().positive(),
 });
 
-const contractAddress = getAddress(BTC); // Ensure the address is checksummed
 
 export default function PayBackForm() {
   const [sbtcPayBack, setSbtcPayBack] = useAtom(sbtcPayBackAtom);
@@ -52,9 +51,6 @@ export default function PayBackForm() {
   // Use useWriteContract for approval
   const { writeContract: writeApprove, isPending: isPendingApprove, isSuccess: isSuccessApprove, isError: isErrorApprove, error: writeErrorApprove } = useWriteContract();
   
-  // Use useWriteContract for submission
-  const { writeContract: writeSubmit, isPending: isPendingSubmit, isSuccess: isSuccessSubmit, isError: isErrorSubmit, error: writeErrorSubmit } = useWriteContract();
-
   // Use useWriteContract for payback
   const { writeContract: writePayBack, isPending: isPendingPayBack, isSuccess: isSuccessPayBack, isError: isErrorPayBack, error: writeErrorPayBack } = useWriteContract();
 
@@ -63,7 +59,7 @@ export default function PayBackForm() {
     try {
       await writeApprove({
         abi: erc20ABI,
-        address: sBTC,
+        address: getAddress(sBTC),
         functionName: 'approve',
         args: [managerAddress, approvalAmount],
       });
@@ -83,15 +79,6 @@ export default function PayBackForm() {
     console.log(values);
 
     try {
-      await writeSubmit({
-        abi: erc20ABI,
-        address: contractAddress,
-        functionName: 'transfer',
-        args: [contractAddress, parseEther(values.sbtcPayBack.toString())],
-      });
-      console.log('Submission successful');
-
-      // Call the payBack function after successful submission
       await writePayBack({
         abi: managerAbi,
         address: managerAddress,
@@ -100,7 +87,7 @@ export default function PayBackForm() {
       });
       console.log('PayBack successful');
     } catch (error) {
-      console.error('Submission or PayBack failed', error);
+      console.error('PayBack failed', error);
     }
   };
 
@@ -132,12 +119,11 @@ export default function PayBackForm() {
           <div className="space-x-4">
             <Button
               onClick={handleApprove}
-              disabled={isPendingApprove || tokenApproval >= approvalAmount}
             >
               {isPendingApprove ? 'Approving...' : isSuccessApprove ? 'Approved' : 'Approve'}
             </Button>
             <Button type="submit">
-              {isPendingSubmit || isPendingPayBack ? 'Submitting...' : 'Submit'}
+              {isPendingPayBack ? 'Submitting...' : 'Submit'}
             </Button>
           </div>
         </form>
@@ -149,11 +135,6 @@ export default function PayBackForm() {
         {isErrorApprove && (
           <p>
             Error during approval: {writeErrorApprove?.message}
-          </p>
-        )}
-        {isErrorSubmit && (
-          <p>
-            Error during submission: {writeErrorSubmit?.message}
           </p>
         )}
         {isErrorPayBack && (

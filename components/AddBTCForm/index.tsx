@@ -188,11 +188,6 @@ export default function AddBTCForm() {
           The updated BTC Amount value is: {btcAmount}
         </p>
       )}
-      {tokenApproval !== null && (
-        <p>
-          Current Token Approval: {tokenApproval}
-        </p>
-      )}
       {isError && (
         <p>
           Error: {writeError?.message}
