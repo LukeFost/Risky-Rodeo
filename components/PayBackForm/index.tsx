@@ -16,13 +16,18 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useAtom, useAtomValue } from 'jotai';
 import { sbtcPayBackAtom, tokenApprovalAtom, errorAtom } from '@/app/atom'; // Correct the import path for atoms
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import BlockchainWatcher from '@/components/BlockchainWatcher'; // Correct the import path for BlockchainWatcher
-import { parseEther } from "viem";
+import { useWriteContract } from 'wagmi';
+import { getAddress, parseEther } from "viem";
+import { erc20ABI } from '@/app/abi/erc20Abi'; // Correct the import path for the ABI
 
 const formSchema = z.object({
   sbtcPayBack: z.number().positive(),
 });
+
+const rawContractAddress = '0xA7c167f58833C5e25848837F45a1372491a535ED';
+const contractAddress = getAddress(rawContractAddress); // Ensure the address is checksummed
 
 export default function PayBackForm() {
   const [sbtcPayBack, setSbtcPayBack] = useAtom(sbtcPayBackAtom);
@@ -30,7 +35,7 @@ export default function PayBackForm() {
   const tokenApproval = useAtomValue(tokenApprovalAtom);
   const error = useAtomValue(errorAtom);
 
-  // 1. Define your form.
+  // Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -40,14 +45,19 @@ export default function PayBackForm() {
 
   const { control } = form;
 
-  // 2. Define a submit handler.
+  // Define the approval amount
+  const approvalAmount = parseEther('100000000000000000');
+
+  // Use useWriteContract for approval
+  const { writeContract, isPending, isSuccess, isError, error: writeError } = useWriteContract();
+
+  // Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
     // Save form values to Jotai state.
     setSbtcPayBack(values.sbtcPayBack);
     setSubmittedValue(values.sbtcPayBack);
 
     // Do something with the form values.
-    // ✅ This will be type-safe and validated.
     console.log(values);
 
     // Connect this to wagmi or other logic here
@@ -78,7 +88,21 @@ export default function PayBackForm() {
               </FormItem>
             )}
           />
-          {tokenApproval < parseEther('100') || null ? <Button>Approve</Button> : <Button type="submit">Submit</Button>}
+          {tokenApproval < approvalAmount ? (
+            <Button
+              onClick={() => writeContract({
+                abi: erc20ABI,
+                address: contractAddress,
+                functionName: 'approve',
+                args: [contractAddress, approvalAmount],
+              })}
+              disabled={isPending}
+            >
+              {isPending ? 'Approving...' : isSuccess ? 'Success!' : 'Approve'}
+            </Button>
+          ) : (
+            <Button type="submit">Submit</Button>
+          )}
         </form>
         {submittedValue !== null && (
           <p>
@@ -90,9 +114,9 @@ export default function PayBackForm() {
             Current Token Approval: {tokenApproval}
           </p>
         )}
-        {error && (
+        {isError && (
           <p>
-            Error: {error}
+            Error: {writeError?.message}
           </p>
         )}
       </Form>
