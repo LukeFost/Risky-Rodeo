@@ -1,6 +1,7 @@
-import ConnectButton from "@/components/ConnectButton";
 export default function Home() {
   return (
-    <ConnectButton/>
+    <>
+    <w3m-button></w3m-button>
+    </>
   );
 }
