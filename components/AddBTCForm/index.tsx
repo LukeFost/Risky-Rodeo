@@ -15,13 +15,13 @@ import {
 import { Input } from "../ui/input"; // Correct the import path for Input
 import { Button } from "../ui/button";
 import { Slider } from "../ui/slider";
-import {DoubleSlider} from "../DoubleSlider";
+import { DoubleSlider } from "../DoubleSlider";
 
 const formSchema = z.object({
-    btcAmount: z.number().positive(),
-    minMaxBounds: z.tuple([z.number(), z.number()]),
-    sbtcBorrow: z.number().positive(),
-  });
+  btcAmount: z.number().positive(),
+  minMaxBounds: z.tuple([z.number(), z.number()]),
+  sbtcBorrow: z.number().positive(),
+});
 
 export default function AddBTCForm() {
   // 1. Define your form.
@@ -34,7 +34,7 @@ export default function AddBTCForm() {
     },
   });
 
-  const {control} = form;
+  const { control } = form;
 
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -46,14 +46,19 @@ export default function AddBTCForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-      <FormField
+        <FormField
           control={control}
           name="btcAmount"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Amount of BTC</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="Enter BTC amount" {...field} />
+                <Input
+                  type="number"
+                  placeholder="Enter BTC amount"
+                  {...field}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                />
               </FormControl>
               <FormDescription>
                 Enter the amount of BTC you want to use.
@@ -62,24 +67,24 @@ export default function AddBTCForm() {
             </FormItem>
           )}
         />
- <FormField
+        <FormField
           control={control}
           name="minMaxBounds"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Min and Max Bounds</FormLabel>
               <FormControl>
-              <Controller
-        name="minMaxBounds"
-        control={control}
-        render={({ field: { value, onChange } }) => (
-          <DoubleSlider
-            minValue={value[0]}
-            maxValue={value[1]}
-            onValueChange={onChange}
-          />
-        )}
-      />
+                <Controller
+                  name="minMaxBounds"
+                  control={control}
+                  render={({ field: { value, onChange } }) => (
+                    <DoubleSlider
+                      minValue={value[0]}
+                      maxValue={value[1]}
+                      onValueChange={onChange}
+                    />
+                  )}
+                />
               </FormControl>
               <FormDescription>
                 Adjust the minimum and maximum bounds.
@@ -88,14 +93,19 @@ export default function AddBTCForm() {
             </FormItem>
           )}
         />
-<FormField
+        <FormField
           control={control}
           name="sbtcBorrow"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Amount of sBTC to Borrow</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="Enter sBTC amount" {...field} />
+                <Input
+                  type="number"
+                  placeholder="Enter sBTC amount"
+                  {...field}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                />
               </FormControl>
               <FormControl>
                 <Controller
