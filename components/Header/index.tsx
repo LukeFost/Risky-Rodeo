@@ -101,15 +101,6 @@ export function Dashboard() {
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>Get an overview of platform stats...</CardDescription>
-                  <CardTitle className="text-4xl">Stats & Data</CardTitle>
-                </CardHeader>
-                <CardContent>
-                <WatcherComponent/>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
                   <CardDescription>Mint your inital tokens here for TEST PURPOSES ONLY</CardDescription>
                   <CardTitle className="text-4xl">Test Mint Tokens</CardTitle>
                 </CardHeader>

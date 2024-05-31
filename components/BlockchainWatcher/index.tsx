@@ -3,45 +3,59 @@
 import React, { useEffect } from 'react';
 import { useReadContract, useAccount } from 'wagmi';
 import { useAtom } from 'jotai';
-import { tokenApprovalAtom, errorAtom } from '@/app/atom';
+import { tokenApprovalSBTCAtom, tokenApprovalVBTCAtom, errorAtom } from '@/app/atom';
 import { getAddress } from 'viem';
 import { erc20ABI } from '@/app/abi/erc20Abi';
-import { BTC, managerAddress } from '@/app/abi/addresses';
-const contractAddress = getAddress(BTC); // Ensure the address is checksummed
+import { sBTC, vBTC, managerAddress } from '@/app/abi/addresses';
 
 const BlockchainWatcher: React.FC = () => {
   const { address: userAddress } = useAccount();
-  const [, setTokenApproval] = useAtom(tokenApprovalAtom);
+  const [, setTokenApprovalSBTC] = useAtom(tokenApprovalSBTCAtom);
+  const [, setTokenApprovalVBTC] = useAtom(tokenApprovalVBTCAtom);
   const [, setError] = useAtom(errorAtom);
 
-  const { data: approvalData, refetch, error } = useReadContract({
+  const { data: approvalDataSBTC, refetch: refetchSBTC, error: errorSBTC } = useReadContract({
     abi: erc20ABI,
-    address: contractAddress,
+    address: sBTC,
+    functionName: 'allowance',
+    args: [userAddress ? getAddress(userAddress) : userAddress, managerAddress],
+  });
+
+  const { data: approvalDataVBTC, refetch: refetchVBTC, error: errorVBTC } = useReadContract({
+    abi: erc20ABI,
+    address: vBTC,
     functionName: 'allowance',
     args: [userAddress ? getAddress(userAddress) : userAddress, managerAddress],
   });
 
   useEffect(() => {
-    if (approvalData !== undefined) {
-      setTokenApproval(Number(approvalData));
+    if (approvalDataSBTC !== undefined) {
+      setTokenApprovalSBTC(Number(approvalDataSBTC));
       setError(null);
-    } else if (error) {
-      setError(error.message);
+    } else if (errorSBTC) {
+      setError(errorSBTC.message);
     }
-  }, [approvalData, error, setTokenApproval, setError]);
+  }, [approvalDataSBTC, errorSBTC, setTokenApprovalSBTC, setError]);
+
+  useEffect(() => {
+    if (approvalDataVBTC !== undefined) {
+      setTokenApprovalVBTC(Number(approvalDataVBTC));
+      setError(null);
+    } else if (errorVBTC) {
+      setError(errorVBTC.message);
+    }
+  }, [approvalDataVBTC, errorVBTC, setTokenApprovalVBTC, setError]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      refetch();
+      refetchSBTC();
+      refetchVBTC();
     }, 10000); // Refetch every 10 seconds
 
     return () => clearInterval(interval);
-  }, [refetch]);
+  }, [refetchSBTC, refetchVBTC]);
 
   return null;
 };
 
 export default BlockchainWatcher;
-
-//TODO: Integrate approval with submit button
-//TODO: Get all token Balances

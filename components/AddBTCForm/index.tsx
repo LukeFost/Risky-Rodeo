@@ -14,9 +14,8 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { Slider } from "../ui/slider";
 import { useAtom, useAtomValue } from 'jotai';
-import { btcAmountAtom, symBoundsAtom, sbtcBorrowAtom, tokenApprovalAtom, errorAtom } from '@/app/atom'; // Correct the import path for atoms
+import { btcAmountAtom, symBoundsAtom, tokenApprovalAtom, errorAtom } from '@/app/atom'; // Correct the import path for atoms
 import React, { useState } from "react";
 import BlockchainWatcher from '@/components/BlockchainWatcher'; // Correct the import path for BlockchainWatcher
 import { useWriteContract } from 'wagmi';
@@ -28,14 +27,12 @@ import { managerAbi } from "@/app/abi/managerABI";
 const formSchema = z.object({
   btcAmount: z.number().positive(),
   symBounds: z.number().positive(),
-  sbtcBorrow: z.number().positive(),
 });
 
 const contractAddress = getAddress(BTC); // Ensure the address is checksummed
 
 export default function AddBTCForm() {
   const [btcAmount, setBtcAmount] = useAtom(btcAmountAtom);
-  const [sbtcBorrow, setSbtcBorrow] = useAtom(sbtcBorrowAtom);
   const [symBounds, setSymBounds] = useAtom(symBoundsAtom);
   const tokenApproval = useAtomValue(tokenApprovalAtom);
   const error = useAtomValue(errorAtom);
@@ -47,7 +44,6 @@ export default function AddBTCForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       btcAmount,
-      sbtcBorrow,
       symBounds,
     },
   });
@@ -64,7 +60,6 @@ export default function AddBTCForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     // Save form values to Jotai state.
     setBtcAmount(values.btcAmount);
-    setSbtcBorrow(values.sbtcBorrow);
     setSymBounds(values.symBounds);
     setSubmittedValue(values.btcAmount);
 
@@ -112,41 +107,6 @@ export default function AddBTCForm() {
           />
           <FormField
             control={control}
-            name="sbtcBorrow"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Amount of sBTC to Borrow</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="Enter sBTC amount"
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  />
-                </FormControl>
-                <FormControl>
-                  <Controller
-                    name="sbtcBorrow"
-                    control={control}
-                    render={({ field: { value, onChange } }) => (
-                      <Slider
-                        min={0}
-                        max={100}
-                        value={[value]} // Assuming a single value, not a range
-                        onValueChange={(newValue) => onChange(newValue[0])}
-                      />
-                    )}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Enter the amount of sBTC you want to borrow.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={control}
             name="symBounds"
             render={({ field }) => (
               <FormItem>
@@ -178,23 +138,23 @@ export default function AddBTCForm() {
             >
               {isPending ? 'Approving...' : isSuccess ? 'Success!' : 'Approve'}
             </Button>
-          <Button type="submit">
-            Submit
-          </Button>
-        </div>
-      </form>
-      {submittedValue !== null && (
-        <p>
-          The updated BTC Amount value is: {btcAmount}
-        </p>
-      )}
-      {isError && (
-        <p>
-          Error: {writeError?.message}
-        </p>
-      )}
-    </Form>
-    <BlockchainWatcher />
+            <Button type="submit">
+              Submit
+            </Button>
+          </div>
+        </form>
+        {submittedValue !== null && (
+          <p>
+            The updated BTC Amount value is: {btcAmount}
+          </p>
+        )}
+        {isError && (
+          <p>
+            Error: {writeError?.message}
+          </p>
+        )}
+      </Form>
+      <BlockchainWatcher />
     </div>
   );
 }

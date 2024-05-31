@@ -7,4 +7,6 @@ export const sbtcPayBackAtom = atom<number>(0);
 export const symBoundsAtom = atom<number>(0);
 
 export const tokenApprovalAtom = atom<number | null>(null);
+export const tokenApprovalSBTCAtom = atom<number | null>(null);
+export const tokenApprovalVBTCAtom = atom<number | null>(null);
 export const errorAtom = atom<string | null>(null);

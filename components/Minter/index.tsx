@@ -6,14 +6,19 @@ import { useAccount, useWriteContract } from 'wagmi';
 import { erc20ABI } from '@/app/abi/erc20Abi'; // Correct the import path for the ABI
 import { parseEther } from "viem";
 import BlockchainWatcher from '@/components/BlockchainWatcher'; // Correct the import path for BlockchainWatcher
+import { useAtomValue } from 'jotai';
+import { tokenApprovalSBTCAtom, tokenApprovalVBTCAtom } from '@/app/atom';
+import { sBTC, vBTC } from "@/app/abi/addresses";
 
 const Minter = ({ contractAddress, buttonText }) => {
   const [minting, setMinting] = useState(false);
   const [mintSuccess, setMintSuccess] = useState(false);
   const [mintError, setMintError] = useState(null);
 
-  const { writeContract, isPending, isSuccess, isError, error: writeError } = useWriteContract();
+  const tokenApprovalSBTC = useAtomValue(tokenApprovalSBTCAtom);
+  const tokenApprovalVBTC = useAtomValue(tokenApprovalVBTCAtom);
 
+  const { writeContract, isPending, isSuccess, isError, error: writeError } = useWriteContract();
   const { address } = useAccount();
 
   const handleMint = async () => {
@@ -36,6 +41,16 @@ const Minter = ({ contractAddress, buttonText }) => {
     }
   };
 
+  const renderTokenApproval = () => {
+    if (contractAddress === sBTC) {
+      return <p>Token Approval sBTC: {tokenApprovalSBTC !== null ? tokenApprovalSBTC : 'Loading...'}</p>;
+    } else if (contractAddress === vBTC) {
+      return <p>Token Approval vBTC: {tokenApprovalVBTC !== null ? tokenApprovalVBTC : 'Loading...'}</p>;
+    } else {
+      return null;
+    }
+  };
+
   return (
     <div>
       <Button onClick={handleMint} disabled={minting}>
@@ -43,6 +58,7 @@ const Minter = ({ contractAddress, buttonText }) => {
       </Button>
       {mintSuccess && <p>Minting successful!</p>}
       {isError && <p>Error: {writeError?.message}</p>}
+      {renderTokenApproval()}
       <BlockchainWatcher />
     </div>
   );
