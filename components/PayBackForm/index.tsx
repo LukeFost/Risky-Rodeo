@@ -101,7 +101,14 @@ export default function PayBackForm() {
               {isPending ? 'Approving...' : isSuccess ? 'Success!' : 'Approve'}
             </Button>
           ) : (
-            <Button type="submit">Submit</Button>
+            <Button
+            onClick={() => writeContract({
+              abi:erc20ABI,
+              address: contractAddress,
+              functionName: 'transfer',
+              args: [contractAddress,parseEther('1')]
+            })}
+            type="submit">Submit</Button>
           )}
         </form>
         {submittedValue !== null && (

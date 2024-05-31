@@ -6,6 +6,7 @@ import { cookieToInitialState } from 'wagmi'
 
 import { config } from '@/config'
 import Web3ModalProvider from '@/context'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 export const metadata: Metadata = {
   title: 'Risky Rodeo',
@@ -21,7 +22,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Web3ModalProvider initialState={initialState}>{children}</Web3ModalProvider>
+        <Web3ModalProvider initialState={initialState}>
+          <TooltipProvider>
+          {children}
+          </TooltipProvider>
+          </Web3ModalProvider>
       </body>
     </html>
   )

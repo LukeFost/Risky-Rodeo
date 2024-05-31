@@ -1,19 +1,10 @@
-import AddBTCForm from "@/components/AddBTCForm";
-import UnstakeButton from "@/components/PayBackForm";
-import WatcherComponent from "@/components/WatcherComponent";
+import { Dashboard } from "@/components/Header";
 
 
 export default function Home() {
   return (
     <>
-    <w3m-button></w3m-button>
-    <hr/>
-    <AddBTCForm/>
-    <hr/>
-    <WatcherComponent/>
-    <hr/>
-    <UnstakeButton/>
-    <hr/>
+    <Dashboard/>
     </>
   );
 }
