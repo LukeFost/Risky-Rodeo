@@ -15,7 +15,7 @@ import {
 import { Input } from "../ui/input"; // Correct the import path for Input
 import { Button } from "../ui/button";
 import { Slider } from "../ui/slider";
-import DoubleSlider from "../DoubleSlider";
+import {DoubleSlider} from "../DoubleSlider";
 
 const formSchema = z.object({
     btcAmount: z.number().positive(),
@@ -69,17 +69,17 @@ export default function AddBTCForm() {
             <FormItem>
               <FormLabel>Min and Max Bounds</FormLabel>
               <FormControl>
-                <Controller
-                  name="minMaxBounds"
-                  control={control}
-                  render={({ field: { value, onChange } }) => (
-                    <DoubleSlider
-                      minValue={value[0]}
-                      maxValue={value[1]}
-                      onValueChange={(newValue) => onChange(newValue)}
-                    />
-                  )}
-                />
+              <Controller
+        name="minMaxBounds"
+        control={control}
+        render={({ field: { value, onChange } }) => (
+          <DoubleSlider
+            minValue={value[0]}
+            maxValue={value[1]}
+            onValueChange={onChange}
+          />
+        )}
+      />
               </FormControl>
               <FormDescription>
                 Adjust the minimum and maximum bounds.
