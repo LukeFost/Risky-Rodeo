@@ -15,134 +15,191 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Slider } from "../ui/slider";
-import { DoubleSlider } from "../DoubleSlider";
-import { useAtom } from 'jotai';
-import { btcAmountAtom, minMaxBoundsAtom, sbtcBorrowAtom } from '@/app/atom'; // Correct the import path for atoms
+import { useAtom, useAtomValue } from 'jotai';
+import { btcAmountAtom, symBoundsAtom, sbtcBorrowAtom, tokenApprovalAtom, errorAtom } from '@/app/atom'; // Correct the import path for atoms
+import React, { useState } from "react";
+import BlockchainWatcher from '@/components/BlockchainWatcher'; // Correct the import path for BlockchainWatcher
+import { useWriteContract } from 'wagmi';
+import { getAddress, parseEther } from "viem";
+import { erc20ABI } from '@/app/abi/erc20Abi'; // Correct the import path for the ABI
+import { BTC, managerAddress } from "@/app/abi/addresses"; // Correct the import path for the contract address
+import { managerAbi } from "@/app/abi/managerABI";
 
 const formSchema = z.object({
   btcAmount: z.number().positive(),
-  minMaxBounds: z.tuple([z.number(), z.number()]),
+  symBounds: z.number().positive(),
   sbtcBorrow: z.number().positive(),
 });
 
+const contractAddress = getAddress(BTC); // Ensure the address is checksummed
+
 export default function AddBTCForm() {
   const [btcAmount, setBtcAmount] = useAtom(btcAmountAtom);
-  const [minMaxBounds, setMinMaxBounds] = useAtom(minMaxBoundsAtom);
   const [sbtcBorrow, setSbtcBorrow] = useAtom(sbtcBorrowAtom);
+  const [symBounds, setSymBounds] = useAtom(symBoundsAtom);
+  const tokenApproval = useAtomValue(tokenApprovalAtom);
+  const error = useAtomValue(errorAtom);
 
-  // 1. Define your form.
+  const [submittedValue, setSubmittedValue] = useState<number | null>(null);
+
+  // Define your form.
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       btcAmount,
-      minMaxBounds,
       sbtcBorrow,
+      symBounds,
     },
   });
 
   const { control } = form;
 
-  // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  // Define the approval amount
+  const approvalAmount = parseEther('100000000000000000');
+
+  // Use useWriteContract for approval and deposit
+  const { writeContract, isPending, isSuccess, isError, error: writeError } = useWriteContract();
+
+  // Define a submit handler.
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     // Save form values to Jotai state.
     setBtcAmount(values.btcAmount);
-    setMinMaxBounds(values.minMaxBounds);
     setSbtcBorrow(values.sbtcBorrow);
+    setSymBounds(values.symBounds);
+    setSubmittedValue(values.btcAmount);
 
     // Do something with the form values.
-    // ✅ This will be type-safe and validated.
     console.log(values);
 
     // Connect this to wagmi or other logic here
+    try {
+      await writeContract({
+        abi: managerAbi,
+        address: managerAddress,
+        functionName: 'deposit',
+        args: [parseEther(values.btcAmount.toString()), values.symBounds, true]
+      });
+      console.log("Deposit successful");
+    } catch (error) {
+      console.error("Deposit failed", error);
+    }
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={control}
-          name="btcAmount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Amount of BTC</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  placeholder="Enter BTC amount"
-                  {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                />
-              </FormControl>
-              <FormDescription>
-                Enter the amount of BTC you want to use.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={control}
-          name="minMaxBounds"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Min and Max Bounds</FormLabel>
-              <FormControl>
-                <Controller
-                  name="minMaxBounds"
-                  control={control}
-                  render={({ field: { value, onChange } }) => (
-                    <DoubleSlider
-                      minValue={value[0]}
-                      maxValue={value[1]}
-                      onValueChange={onChange}
-                    />
-                  )}
-                />
-              </FormControl>
-              <FormDescription>
-                Adjust the minimum and maximum bounds.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={control}
-          name="sbtcBorrow"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Amount of sBTC to Borrow</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  placeholder="Enter sBTC amount"
-                  {...field}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                />
-              </FormControl>
-              <FormControl>
-                <Controller
-                  name="sbtcBorrow"
-                  control={control}
-                  render={({ field: { value, onChange } }) => (
-                    <Slider
-                      min={0}
-                      max={100}
-                      value={[value]} // Assuming a single value, not a range
-                      onValueChange={(newValue) => onChange(newValue[0])}
-                    />
-                  )}
-                />
-              </FormControl>
-              <FormDescription>
-                Enter the amount of sBTC you want to borrow.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit">Submit</Button>
+    <div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          <FormField
+            control={control}
+            name="btcAmount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Amount of BTC</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Enter BTC amount"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Enter the amount of BTC you want to use.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="sbtcBorrow"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Amount of sBTC to Borrow</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Enter sBTC amount"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  />
+                </FormControl>
+                <FormControl>
+                  <Controller
+                    name="sbtcBorrow"
+                    control={control}
+                    render={({ field: { value, onChange } }) => (
+                      <Slider
+                        min={0}
+                        max={100}
+                        value={[value]} // Assuming a single value, not a range
+                        onValueChange={(newValue) => onChange(newValue[0])}
+                      />
+                    )}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Enter the amount of sBTC you want to borrow.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={control}
+            name="symBounds"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sym Bounds</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Enter Sym Bounds"
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Enter the Sym Bounds value.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+           <div className="space-x-4">
+            <Button
+              onClick={() => writeContract({
+                abi: erc20ABI,
+                address: contractAddress,
+                functionName: 'approve',
+                args: [managerAddress, approvalAmount],
+              })}
+              disabled={isPending}
+            >
+              {isPending ? 'Approving...' : isSuccess ? 'Success!' : 'Approve'}
+            </Button>
+          <Button type="submit">
+            Submit
+          </Button>
+        </div>
       </form>
+      {submittedValue !== null && (
+        <p>
+          The updated BTC Amount value is: {btcAmount}
+        </p>
+      )}
+      {tokenApproval !== null && (
+        <p>
+          Current Token Approval: {tokenApproval}
+        </p>
+      )}
+      {isError && (
+        <p>
+          Error: {writeError?.message}
+        </p>
+      )}
     </Form>
+    <BlockchainWatcher />
+    </div>
   );
 }

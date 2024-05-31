@@ -6,9 +6,8 @@ import { useAtom } from 'jotai';
 import { tokenApprovalAtom, errorAtom } from '@/app/atom';
 import { getAddress } from 'viem';
 import { erc20ABI } from '@/app/abi/erc20Abi';
-
-const rawContractAddress = '0xA7c167f58833C5e25848837F45a1372491a535ED';
-const contractAddress = getAddress(rawContractAddress); // Ensure the address is checksummed
+import { BTC, managerAddress } from '@/app/abi/addresses';
+const contractAddress = getAddress(BTC); // Ensure the address is checksummed
 
 const BlockchainWatcher: React.FC = () => {
   const { address: userAddress } = useAccount();
@@ -19,7 +18,7 @@ const BlockchainWatcher: React.FC = () => {
     abi: erc20ABI,
     address: contractAddress,
     functionName: 'allowance',
-    args: [userAddress ? getAddress(userAddress) : userAddress, contractAddress],
+    args: [userAddress ? getAddress(userAddress) : userAddress, managerAddress],
   });
 
   useEffect(() => {

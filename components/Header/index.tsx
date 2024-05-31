@@ -52,8 +52,15 @@ import CardElement from "../CardElement"
 import AddBTCForm from "../AddBTCForm"
 import WatcherComponent from "../WatcherComponent"
 import UnstakeButton from "@/components/PayBackForm";
+import { getAddress } from "viem"
+import { BTC, vBTC, sBTC } from "@/app/abi/addresses"
+import Minter from "../Minter"
+import BorrowButton from "../BorrowButton"
 
 export function Dashboard() {
+  const contractAddressBTC = getAddress(BTC);
+  const contractAddressVBTC = getAddress(vBTC);
+  const contractAddressSBTC = getAddress(sBTC);
     return (
       <div className="flex min-h-screen w-full flex-col bg-muted/40">
         <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
@@ -67,11 +74,20 @@ export function Dashboard() {
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>Lend your BTC to receive sBTC!</CardDescription>
-                  <CardTitle className="text-4xl">Borrow sBTC</CardTitle>
+                  <CardDescription>Lend your BTC Here!</CardDescription>
+                  <CardTitle className="text-4xl">Deposit BTC</CardTitle>
                 </CardHeader>
                 <CardContent>
                 <AddBTCForm/>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Borrow sBTC Here!</CardDescription>
+                  <CardTitle className="text-4xl">Borrow sBTC</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BorrowButton/>
                 </CardContent>
               </Card>
               <Card>
@@ -91,6 +107,20 @@ export function Dashboard() {
                 <CardContent>
                 <WatcherComponent/>
                 </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription>Mint your inital tokens here for TEST PURPOSES ONLY</CardDescription>
+                  <CardTitle className="text-4xl">Test Mint Tokens</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <br/>
+                <Minter contractAddress={contractAddressBTC} buttonText="Mint BTC" />
+                <br/>
+        <Minter contractAddress={contractAddressVBTC} buttonText="Mint vBTC" />
+        <br/>
+        <Minter contractAddress={contractAddressSBTC} buttonText="Mint sBTC" />
+      </CardContent>
               </Card>
               </div>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
 import {
   Form,
@@ -16,18 +16,19 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useAtom, useAtomValue } from 'jotai';
 import { sbtcPayBackAtom, tokenApprovalAtom, errorAtom } from '@/app/atom'; // Correct the import path for atoms
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import BlockchainWatcher from '@/components/BlockchainWatcher'; // Correct the import path for BlockchainWatcher
 import { useWriteContract } from 'wagmi';
 import { getAddress, parseEther } from "viem";
 import { erc20ABI } from '@/app/abi/erc20Abi'; // Correct the import path for the ABI
+import { BTC, managerAddress, sBTC } from "@/app/abi/addresses";
+import { managerAbi } from "@/app/abi/managerABI";
 
 const formSchema = z.object({
   sbtcPayBack: z.number().positive(),
 });
 
-const rawContractAddress = '0xA7c167f58833C5e25848837F45a1372491a535ED';
-const contractAddress = getAddress(rawContractAddress); // Ensure the address is checksummed
+const contractAddress = getAddress(BTC); // Ensure the address is checksummed
 
 export default function PayBackForm() {
   const [sbtcPayBack, setSbtcPayBack] = useAtom(sbtcPayBackAtom);
@@ -49,10 +50,31 @@ export default function PayBackForm() {
   const approvalAmount = parseEther('100000000000000000');
 
   // Use useWriteContract for approval
-  const { writeContract, isPending, isSuccess, isError, error: writeError } = useWriteContract();
+  const { writeContract: writeApprove, isPending: isPendingApprove, isSuccess: isSuccessApprove, isError: isErrorApprove, error: writeErrorApprove } = useWriteContract();
+  
+  // Use useWriteContract for submission
+  const { writeContract: writeSubmit, isPending: isPendingSubmit, isSuccess: isSuccessSubmit, isError: isErrorSubmit, error: writeErrorSubmit } = useWriteContract();
+
+  // Use useWriteContract for payback
+  const { writeContract: writePayBack, isPending: isPendingPayBack, isSuccess: isSuccessPayBack, isError: isErrorPayBack, error: writeErrorPayBack } = useWriteContract();
+
+  // Define an approval handler.
+  const handleApprove = async () => {
+    try {
+      await writeApprove({
+        abi: erc20ABI,
+        address: sBTC,
+        functionName: 'approve',
+        args: [managerAddress, approvalAmount],
+      });
+      console.log('Approval successful');
+    } catch (error) {
+      console.error('Approval failed', error);
+    }
+  };
 
   // Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     // Save form values to Jotai state.
     setSbtcPayBack(values.sbtcPayBack);
     setSubmittedValue(values.sbtcPayBack);
@@ -60,13 +82,32 @@ export default function PayBackForm() {
     // Do something with the form values.
     console.log(values);
 
-    // Connect this to wagmi or other logic here
-  }
+    try {
+      await writeSubmit({
+        abi: erc20ABI,
+        address: contractAddress,
+        functionName: 'transfer',
+        args: [contractAddress, parseEther(values.sbtcPayBack.toString())],
+      });
+      console.log('Submission successful');
+
+      // Call the payBack function after successful submission
+      await writePayBack({
+        abi: managerAbi,
+        address: managerAddress,
+        functionName: 'payBack',
+        args: [parseEther(values.sbtcPayBack.toString())],
+      });
+      console.log('PayBack successful');
+    } catch (error) {
+      console.error('Submission or PayBack failed', error);
+    }
+  };
 
   return (
     <div>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
           <FormField
             control={control}
             name="sbtcPayBack"
@@ -88,42 +129,36 @@ export default function PayBackForm() {
               </FormItem>
             )}
           />
-          {tokenApproval < approvalAmount ? (
+          <div className="space-x-4">
             <Button
-              onClick={() => writeContract({
-                abi: erc20ABI,
-                address: contractAddress,
-                functionName: 'approve',
-                args: [contractAddress, approvalAmount],
-              })}
-              disabled={isPending}
+              onClick={handleApprove}
+              disabled={isPendingApprove || tokenApproval >= approvalAmount}
             >
-              {isPending ? 'Approving...' : isSuccess ? 'Success!' : 'Approve'}
+              {isPendingApprove ? 'Approving...' : isSuccessApprove ? 'Approved' : 'Approve'}
             </Button>
-          ) : (
-            <Button
-            onClick={() => writeContract({
-              abi:erc20ABI,
-              address: contractAddress,
-              functionName: 'transfer',
-              args: [contractAddress,parseEther('1')]
-            })}
-            type="submit">Submit</Button>
-          )}
+            <Button type="submit">
+              {isPendingSubmit || isPendingPayBack ? 'Submitting...' : 'Submit'}
+            </Button>
+          </div>
         </form>
         {submittedValue !== null && (
           <p>
             The updated sBTC Pay Back value is: {sbtcPayBack}
           </p>
         )}
-        {tokenApproval !== null && (
+        {isErrorApprove && (
           <p>
-            Current Token Approval: {tokenApproval}
+            Error during approval: {writeErrorApprove?.message}
           </p>
         )}
-        {isError && (
+        {isErrorSubmit && (
           <p>
-            Error: {writeError?.message}
+            Error during submission: {writeErrorSubmit?.message}
+          </p>
+        )}
+        {isErrorPayBack && (
+          <p>
+            Error during payback: {writeErrorPayBack?.message}
           </p>
         )}
       </Form>
